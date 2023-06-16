@@ -15,16 +15,17 @@ This model is then compared to an Azure AutoML run.
 ## Summary
 This dataset contains data about potential customers of a bank. E.g. the age, the profession, marital status, loan etc.
 
-The best performing model was a
+The best performing model was the result of the AutoML pipeline with a StandardScalerWrapper XGBoostClassifier.
 
 ## Scikit-learn Pipeline
 **Explain the pipeline architecture, including data, hyperparameter tuning, and classification algorithm.**
 
-The scikit-learn pipeline was configured with discrete values and choice parameters. While the parameter C is used for regularization, max_iter helps to define the maximum number of iterations. 
+The scikit-learn pipeline was configured with discrete values and choice parameters. While the parameter C is used for regularization, max_iter helps to define the maximum number of iterations. The first step is the download / creation of a tabular dataset, that contains bankmarketing data. This dataset is first cleaned and then split into test and training data. Afterwards a logistic regression is performed with the hyperparameters C and max_iter. For C and max_iter a range of discrete values is configured. Here Hyperdrive and its hyperparameter tuning is used to find the best set of hyperparameters and the best perfoming model. The optimization metric chosen is accuracy.
+
 
 **What are the benefits of the parameter sampler you chose?**
 
-I chose the RandomParameterSampling, which allows to define an early-stop criteria. The advantage of this parameter sampling is the reduction of cotst thanks to the early termination.
+I chose the RandomParameterSampling, which allows to define an early-stop criteria. The advantage of this parameter sampling is the reduction of costs thanks to the early termination.
 
 **What are the benefits of the early stopping policy you chose?**
 I used the BanditPolicy, which helps to cancel poorly performing runs earlier. Via the slack factor the distance to the best performing run is calculated. If the current run is to far away form the best run, it will be stopped. This helps to save compute power, time and money. 
@@ -34,10 +35,25 @@ I used the BanditPolicy, which helps to cancel poorly performing runs earlier. V
 
 The AutoML run is configured a classification that optimizes based on the metric "Accuracy". ONNX compatible models is enabled and hence ONNX models can be exported. 
 
+```
+automl_config = AutoMLConfig(
+    compute_target=compute_target,
+    experiment_timeout_minutes=15,
+    task='classification', 
+    primary_metric='accuracy',
+    training_data=tbds,
+    label_column_name='y',
+    enable_onnx_compatible_models=True,
+    n_cross_validations=2)
+```
+
+The above code contains the configuration of the AutoML. It is ran for 15 minutes, as task classification is chosen and the primary metric to optimize on is accuracy. The onnx compatible model is enabled with True, to export the models in an easily readible format for many ML frameworks. The number of cross validations is set to 2. 
+
+
 ## Pipeline comparison
 **Compare the two models and their performance. What are the differences in accuracy? In architecture? If there was a difference, why do you think there was one?**
 
-The accuracy of the AutoML is slightly better with the StandardScalerWrapper XGBoostClassifiera and 0.9129. The accuracy of the hyperdrive model is 0.9118361153262519.
+The accuracy of the AutoML is slightly better with the StandardScalerWrapper XGBoostClassifier and 0.9129. The accuracy of the hyperdrive model is 0.9118361153262519. As one can observe, the AutoML model improves the accuracy further with the increasing number of iterations. Hence, the delta between the Hyperdrive Model and the AutoML model would increase further with more iterations. The advantage of AutoML is that it does not rely on only one Classifier, but it tests a bigger number of classifiers to see which one fits best for the underlying problem. 
 
 ## Future work
 **What are some areas of improvement for future experiments? Why might these improvements help the model?**
